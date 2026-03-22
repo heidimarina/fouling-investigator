@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fouling Investigator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: #0f1923; color: #d0d8e0; min-height: 100vh; }
+    .md h2 { font-size: 15px; font-weight: 700; color: #e8c56a; margin: 18px 0 8px; }
+    .md h3 { font-size: 14px; font-weight: 700; color: #8ab4d0; margin: 14px 0 6px; }
+    .md h4 { font-size: 13px; font-weight: 600; color: #a0b8c8; margin: 10px 0 4px; }
+    .md p { margin: 0 0 8px; line-height: 1.7; }
+    .md ul, .md ol { margin: 0 0 8px 20px; line-height: 1.7; }
+    .md li { margin: 2px 0; }
+    .md strong { color: #e0e8f0; }
+    .md code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    .md blockquote { border-left: 3px solid #e8c56a44; padding: 8px 14px; margin: 8px 0; background: rgba(232,197,106,0.04); border-radius: 0 6px 6px 0; }
+    .md table { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: 12px; }
+    .md th, .md td { border: 1px solid #2a3a4a; padding: 6px 10px; text-align: left; }
+    .md th { background: rgba(255,255,255,0.05); color: #8ab4d0; font-weight: 600; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/marked/marked.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+// ═══════════════════════════════════════
+// INSTRUMENT LISTS
+// ═══════════════════════════════════════
+const INTERNAL_INSTRUMENTS = [
+  "ICP-OES/AES (Agilent 5110) — metals: Al, Ba, Ca, Co, Cr, Cu, Fe, Mg, Mn, Ni, K, Na, V, Zn, P, Si, Sr, Mo",
+  "XRF (sulphur analysis)",
+  "FT-IR spectrometer",
+  "UV-Vis spectrophotometer",
+  "NIR (near-infrared spectroscopy)",
+  "GC (gas chromatograph)",
+  "Light ends analysis by GC",
+  "Oil in water analysis by GC",
+  "DHA by GC (detailed hydrocarbon analysis)",
+  "HT SimDist (high temperature simulated distillation)",
+  "D-86 OptiDist (atmospheric distillation)",
+  "Vacuum distillation",
+  "SARA analysis (saturate, aromatic, resin, asphaltene)",
+  "Asphaltene analysis (heptane insolubles)",
+  "CHNS element analyser (carbon, hydrogen, nitrogen, sulphur)",
+  "O element analyser (oxygen)",
+  "Antek MultiTek analyser (total S and N in hydrocarbons)",
+  "Micro carbon residue tester",
+  "Ash analysis (550°C and 900°C)",
+  "Karl Fischer titration (water content)",
+  "Viscosity analyser",
+  "Density at 15°C and 50°C",
+  "Refractive index",
+  "Penetrometer",
+  "Acid number analysis (TAN and strong acid number)",
+  "Basic nitrogen analysis",
+  "Mercaptan sulphur analysis",
+  "Salt in crude analyser",
+  "Hg analyser (MA-3000) — water and oil samples",
+  "Vapour pressure analyser",
+  "Pour point",
+  "Cloud point",
+  "CFPP (cold filter plugging point)",
+  "Flash point",
+  "Smoke point",
+  "Aniline point",
+  "Oxidation stability (diesel and petrol)",
+  "Cetane index",
+  "Watson K factor determination",
+  "Titrator",
+  "LRA instrument",
+  "FAME content in middle distillates",
+  "Naphthalenes in kerosene by UV spectroscopy",
+  "Aromatics in residue fractions by UV spectroscopy",
+  "Organic chloride in crude oil",
+  "Unrefined and refined wax content in crude oil and residue",
+  "Sediments by extraction",
+  "Filtration method — total contamination in middle distillates/diesel/gasoils/FAME",
+  "Micro fouling test system",
+  "Optical fouling test system",
+  "Fouling potential analyser with HLPS (hot liquid process simulator)",
+  "Ash in oil products analysis",
+  "Salt analysis in crude oil",
+];
+
+const EXTERNAL_INSTRUMENTS = [
+  "Lead (Pb) analysis",
+  "SEM-EDS (scanning electron microscopy with energy dispersive X-ray spectroscopy)",
+  "XRD (X-ray diffraction)",
+  "TGA (thermogravimetric analysis)",
+  "DSC (differential scanning calorimetry)",
+  "ICP-MS (inductively coupled plasma mass spectrometry)",
+  "GC-MS (gas chromatography–mass spectrometry)",
+  "LC-MS (liquid chromatography–mass spectrometry)",
+  "Particle size analysis",
+  "Optical/polarised light microscopy",
+];
+
+const INSTRUMENT_TEXT = `
+INTERNAL LABORATORY INSTRUMENTS AND METHODS (preferred — faster and cheaper):
+${INTERNAL_INSTRUMENTS.map(i => `• ${i}`).join("\n")}
+
+EXTERNAL LABORATORY INSTRUMENTS AND METHODS (available but slower/more expensive — only recommend if internal methods cannot confirm a leading theory):
+${EXTERNAL_INSTRUMENTS.map(i => `• ${i}`).join("\n")}
+
+ICP-OES METALS NOTE: Standards currently available for Al, Ba, Ca, Co, Cr, Cu, Fe, Mg, Mn, Ni, K, Na, V, Zn, P, Si, Sr, Mo. Standards for Ti, B, Sn, As, Li, W, Cd have been recommended but are not yet available — flag if any of these would be critical.
+`.trim();
+
+// ═══════════════════════════════════════
+// AGENT PROFILES
+// ═══════════════════════════════════════
+const AGENTS = [
+  {
+    id: "organic",
+    name: "Organic Fouling Chemist",
+    icon: "🧪",
+    color: "#4ECDC4",
+    system: `You are an expert organic fouling chemist specialising in petroleum refining. You approach fouling investigations with detective-like curiosity — methodical, thorough, genuinely engaged in solving the puzzle.
+
+Your expertise covers:
+- Asphaltene precipitation and deposition (peptisation failure, colloidal instability, incompatibility)
+- Thermal and oxidative polymerisation of hydrocarbons
+- Coke formation mechanisms (thermal cracking, catalytic coking, condensation reactions)
+- Wax/paraffin deposition, gelation, and cold flow problems
+- Gum and varnish formation from olefin polymerisation
+- Biological fouling (MIC, SRB, biofilms) in storage and water systems
+- Organic acid corrosion products and soap formation
+- Additive degradation products and incompatibility
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
+1. Give it a clear name
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain the mechanism concisely (2–4 sentences)
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry. Do not hedge excessively. If you see something, say it.`
+  },
+  {
+    id: "inorganic",
+    name: "Inorganic / Corrosion Specialist",
+    icon: "⚙️",
+    color: "#FF6B6B",
+    system: `You are an expert in inorganic fouling and corrosion in petroleum refining environments. You approach fouling investigations with detective-like curiosity — methodical, thorough, genuinely engaged in solving the puzzle.
+
+Your expertise covers:
+- Scale formation: CaCO₃, CaSO₄, BaSO₄, silicate deposits, iron scales
+- Corrosion products: FeS, FeS₂, Fe₂O₃, Fe₃O₄, FeOOH, CuS, ZnS
+- Naphthenic acid corrosion and its deposit signatures
+- High-temperature sulfidic and sulfidation corrosion
+- Ammonium salt deposition (NH₄Cl, (NH₄)₂SO₄) in overhead systems
+- Catalyst fines carryover (alumina, silica-alumina, zeolites, TiO₂ supports)
+- Caustic carryover and sodium-based deposits
+- Chloride-induced corrosion and under-deposit corrosion
+- Metal compound deposition and speciation
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
+1. Give it a clear name
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain the mechanism concisely (2–4 sentences)
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry.`
+  },
+  {
+    id: "process",
+    name: "Process Engineer",
+    icon: "🏭",
+    color: "#45B7D1",
+    system: `You are a senior refinery process engineer specialising in fouling root cause analysis. You approach fouling investigations with detective-like curiosity — methodical, thorough, genuinely engaged in solving the puzzle.
+
+Your expertise covers:
+- CDU/VDU operations, preheat train fouling, desalter issues
+- Heat exchanger fouling mechanisms and tube-side vs shell-side deposits
+- Furnace tube coking and flame impingement
+- FCC operations: catalyst circulation, slurry oil quality, main fractionator fouling
+- Hydrocracking and hydrotreating: reactor fouling, catalyst bed plugging, effluent system deposits
+- Overhead system corrosion and salt deposition
+- Flow maldistribution and dead zones creating fouling hotspots
+- Phase behaviour under process conditions (two-phase flow, retrograde condensation)
+- Temperature excursion impacts on deposit formation
+- Pressure drop anomalies as fouling indicators
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, focus on WHERE and WHY in the process this fouling formed. Provide 2–4 theories:
+1. Give it a clear name referencing the process mechanism
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain what process conditions led to this — temperature regimes, flow patterns, phase behaviour
+4. List supporting evidence from the sample description and location
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 analytical tests that would differentiate between process-related causes — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Use appropriate jargon.`
+  },
+  {
+    id: "contamination",
+    name: "Contamination / External Source Analyst",
+    icon: "🔍",
+    color: "#96E6A1",
+    system: `You are a specialist in contamination source identification in petroleum refining. You approach fouling investigations with detective-like curiosity — methodical, thorough, always considering the "unexpected" explanations others might miss.
+
+Your expertise covers:
+- Crude oil blend incompatibility (asphaltene destabilisation, phase separation)
+- Tank bottom sediment mobilisation after crude switches
+- Cross-contamination between product streams (valve leaks, exchanger leaks)
+- Chemical injection interactions: demulsifier/corrosion inhibitor/antifoulant incompatibility
+- Cooling water or steam leak ingress into process streams
+- Air ingress causing oxidation and peroxide formation
+- Construction/maintenance debris (weld slag, gasket material, insulation fibres)
+- Seal oil or lube oil contamination
+- External water ingress (rainwater, firewater)
+- Off-spec chemical deliveries
+- Grease contamination from pumps, valves, flanges
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, think about contamination and unexpected external sources. Provide 2–4 theories:
+1. Give it a clear name
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain the contamination pathway (2–4 sentences)
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 analytical tests that would identify contamination sources — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Think creatively — contamination sources are often the ones nobody considered.`
+  },
+  {
+    id: "feedstock",
+    name: "Crude / Feedstock Chemistry Specialist",
+    icon: "🛢️",
+    color: "#DDA0DD",
+    system: `You are a specialist in crude oil and feedstock chemistry with deep knowledge of how feed quality drives fouling in refineries. You approach fouling investigations with detective-like curiosity.
+
+Your expertise covers:
+- Crude blend compatibility and colloidal stability (CII, SBN, IN parameters)
+- Naphthenic acid content, speciation, and corrosivity
+- Opportunity crude challenges (high TAN, high metals, tight oil blending issues)
+- Desalter performance: emulsion pads, rag layers, brine quality
+- Crude oil emulsion stability and interface phenomena
+- Metalloporphyrin behaviour (V, Ni) and their role in catalyst deactivation and deposits
+- Sulfur species distribution (mercaptans, sulfides, thiophenes, H₂S)
+- Nitrogen species and their contribution to colour bodies, gums, and instability
+- Chloride species (organic vs inorganic) and their downstream impact
+- Crude oil sediment and BS&W issues
+- Wax and pour point behaviour of different crude types
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, consider whether feedstock quality or crude chemistry could be the root cause. Provide 2–4 theories:
+1. Give it a clear name
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain how the crude/feedstock chemistry produced this deposit (2–4 sentences)
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 analytical tests — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Use appropriate jargon.`
+  },
+  {
+    id: "thermal",
+    name: "Thermal / Catalytic Degradation Specialist",
+    icon: "🔥",
+    color: "#F7DC6F",
+    system: `You are a specialist in thermal and catalytic degradation mechanisms in petroleum refining. You approach fouling investigations with detective-like curiosity.
+
+Your expertise covers:
+- Thermal cracking kinetics and coke precursor formation
+- Catalytic coke: mechanisms involving metal surfaces (Fe, Ni, V) as coke promoters
+- Heat exchanger fouling: film temperature effects, autoxidation, thermal polymerisation
+- Furnace tube coking: radiant vs convection section, flame impingement, hot spots
+- Catalyst deactivation by coking, sintering, and poisoning
+- FCC catalyst attrition, fines generation, and cyclone efficiency
+- Hydroprocessing catalyst bed fouling: scale, coke, particulate plugging
+- Free radical polymerisation at elevated temperatures
+- Thermal degradation of additives and treating chemicals
+- Hot wall vs bulk fluid temperature effects on deposit formation rates
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+Given a fouling sample description, evaluate whether thermal or catalytic degradation is involved. Provide 2–4 theories:
+1. Give it a clear name
+2. Rate confidence: HIGH / MEDIUM / LOW
+3. Explain the degradation mechanism and temperature regime (2–4 sentences)
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain
+6. Recommend 2–4 analytical tests — prioritise internal methods, fastest/easiest first
+
+Be concise and professional. Use appropriate jargon.`
+  },
+];
+
+const LEAD_SYSTEM = `You are the Lead Investigator for a petroleum refinery fouling investigation. You have received analyses from 6 domain specialists. Your job is to synthesise their findings into a clear, actionable report.
+
+You are sharp, curious, and decisive. You cut through noise, identify the strongest theories, challenge weak reasoning, and design an efficient analytical plan. The chemist reading your report has a PhD — be professional, concise, and use appropriate jargon. Do not over-explain basics.
+
+${INSTRUMENT_TEXT}
+
+INSTRUCTIONS:
+1. **THEORY RANKING** — Review all theories from the 6 specialists. Identify the top 3–5 most plausible theories. For each:
+   - State the theory name and which specialist(s) proposed it
+   - Give your confidence assessment: HIGH / MEDIUM / LOW
+   - Briefly explain why you rank it where you do (1–2 sentences)
+   - Note if multiple specialists converged on the same mechanism (strengthens confidence)
+
+2. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right.
+
+3. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
+   - Order tests from fastest/easiest to most complex
+   - For each test, state what it would confirm or rule out
+   - Group into phases: Phase 1 (quick screening, do immediately), Phase 2 (targeted confirmation), Phase 3 (deep characterisation if needed)
+   - STRONGLY prefer internal methods. Only recommend external methods if internal methods genuinely cannot answer a critical question.
+
+4. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
+
+5. **SUGGESTED ICP-OES ADDITIONS** — If any currently unavailable ICP-OES elements (Ti, B, Sn, As, Li, W, Cd) would be particularly valuable for this specific investigation, note which ones and why.
+
+Keep the total report focused and scannable. Use headers, bullet points, and bold text for key findings.`;
+
+// ═══════════════════════════════════════
+// API CALL
+// ═══════════════════════════════════════
+async function callClaude(apiKey, model, systemPrompt, userMessage, maxTokens = 2000) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }],
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`API error ${resp.status}: ${err}`);
+  }
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// ═══════════════════════════════════════
+// MARKDOWN RENDERER
+// ═══════════════════════════════════════
+function Md({ text }) {
+  const html = useMemo(() => {
+    if (!text) return "";
+    marked.setOptions({ breaks: true, gfm: true });
+    return marked.parse(text);
+  }, [text]);
+  return <div className="md" dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// ═══════════════════════════════════════
+// COMPONENTS
+// ═══════════════════════════════════════
+
+function Header() {
+  return (
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a3f 50%, #0f1e2e 100%)", padding: "20px 24px", borderBottom: "3px solid #e8c56a33" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(232,197,106,0.1)", border: "1px solid rgba(232,197,106,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+          🔬
+        </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#e8c56a", letterSpacing: -0.3 }}>Fouling Investigator</h1>
+          <p style={{ margin: 0, fontSize: 11, color: "rgba(200,210,220,0.5)", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: 0.5 }}>
+            Multi-agent fouling root cause analysis
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApiKeyInput({ apiKey, setApiKey }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "16px 18px", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#8ab4d0", textTransform: "uppercase", letterSpacing: 1 }}>Anthropic API Key</span>
+        <span style={{ fontSize: 10, color: "#4a6070" }}>stored locally only</span>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type={show ? "text" : "password"}
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
+          placeholder="sk-ant-..."
+          style={{ flex: 1, fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, padding: "10px 12px", border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#d0d8e0", outline: "none" }}
+        />
+        <button onClick={() => setShow(!show)} style={{ background: "#1e2e3e", border: "none", borderRadius: 6, padding: "0 12px", cursor: "pointer", color: "#6a8a9a", fontSize: 12, fontWeight: 600 }}>
+          {show ? "Hide" : "Show"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SampleForm({ onSubmit, disabled }) {
+  const [form, setForm] = useState({
+    sampleId: "",
+    physicalForm: "",
+    appearance: "",
+    odor: "",
+    location: "",
+    processStream: "",
+    conditions: "",
+    duration: "",
+    recentChanges: "",
+    observations: "",
+    prelimResults: "",
+  });
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const inputStyle = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, padding: "10px 12px", border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#d0d8e0", outline: "none", width: "100%", resize: "vertical" };
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 600, color: "#6a8a9a", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.8 };
+
+  const physicalForms = ["", "Solid — powder/granular", "Solid — hard chunks/flakes", "Solid — layered deposit", "Paste / sludge", "Waxy solid", "Liquid — clear", "Liquid — opaque/dark", "Emulsion", "Slurry (solid + liquid)", "Other"];
+
+  const handleSubmit = () => {
+    const parts = [];
+    if (form.sampleId) parts.push(`**Sample ID:** ${form.sampleId}`);
+    if (form.physicalForm) parts.push(`**Physical Form:** ${form.physicalForm}`);
+    if (form.appearance) parts.push(`**Appearance (colour, texture):** ${form.appearance}`);
+    if (form.odor) parts.push(`**Odour:** ${form.odor}`);
+    if (form.location) parts.push(`**Location Found:** ${form.location}`);
+    if (form.processStream) parts.push(`**Process Stream:** ${form.processStream}`);
+    if (form.conditions) parts.push(`**Operating Conditions (T, P, flow if known):** ${form.conditions}`);
+    if (form.duration) parts.push(`**Duration / When First Noticed:** ${form.duration}`);
+    if (form.recentChanges) parts.push(`**Recent Changes (crude blend, operations, maintenance):** ${form.recentChanges}`);
+    if (form.observations) parts.push(`**Additional Observations:** ${form.observations}`);
+    if (form.prelimResults) parts.push(`**Preliminary Test Results:** ${form.prelimResults}`);
+    onSubmit(parts.join("\n"));
+  };
+
+  const hasSomething = form.appearance || form.location || form.physicalForm;
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "20px 18px" }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#e8c56a", marginBottom: 4 }}>Sample Description</div>
+      <div style={{ fontSize: 12, color: "#4a6a7a", marginBottom: 18 }}>Describe everything you know about the sample. More detail = better theories.</div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Sample ID / Reference</label>
+            <input value={form.sampleId} onChange={e => set("sampleId", e.target.value)} style={inputStyle} placeholder="e.g. REF-2026-0342" />
+          </div>
+          <div>
+            <label style={labelStyle}>Physical Form</label>
+            <select value={form.physicalForm} onChange={e => set("physicalForm", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+              {physicalForms.map(f => <option key={f} value={f}>{f || "Select..."}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style={labelStyle}>Appearance (colour, texture, consistency)</label>
+          <textarea value={form.appearance} onChange={e => set("appearance", e.target.value)} style={{ ...inputStyle, minHeight: 60 }} placeholder="e.g. Black, hard, layered deposit with metallic sheen on inner surface. Brittle when scraped." />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Odour (if noted)</label>
+            <input value={form.odor} onChange={e => set("odor", e.target.value)} style={inputStyle} placeholder="e.g. Strong H₂S smell, petroleum odour" />
+          </div>
+          <div>
+            <label style={labelStyle}>Duration / When first noticed</label>
+            <input value={form.duration} onChange={e => set("duration", e.target.value)} style={inputStyle} placeholder="e.g. 3 months, discovered during turnaround" />
+          </div>
+        </div>
+
+        <div>
+          <label style={labelStyle}>Location found (unit, equipment, position)</label>
+          <textarea value={form.location} onChange={e => set("location", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Crude preheat exchanger E-101 tube side, inlet end. CDU preheat train." />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Process stream (what flows through)</label>
+          <input value={form.processStream} onChange={e => set("processStream", e.target.value)} style={inputStyle} placeholder="e.g. Desalted crude, mix of Arab Light and Johan Sverdrup" />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Operating conditions (T, P, flow if known)</label>
+          <input value={form.conditions} onChange={e => set("conditions", e.target.value)} style={inputStyle} placeholder="e.g. Inlet 180°C, outlet 250°C, 15 bar, ~200 m³/h" />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Recent changes (crude blend, operations, maintenance, shutdowns)</label>
+          <textarea value={form.recentChanges} onChange={e => set("recentChanges", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Switched to 30% opportunity crude 6 weeks ago, increased furnace outlet temp by 5°C" />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Additional observations</label>
+          <textarea value={form.observations} onChange={e => set("observations", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="Anything else — pressure drop trends, production impact, similar incidents, visual details..." />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Preliminary test results (if any)</label>
+          <textarea value={form.prelimResults} onChange={e => set("prelimResults", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Soluble in toluene but not heptane, ash content ~15%, high Fe by XRF screening" />
+        </div>
+      </div>
+
+      <button onClick={handleSubmit} disabled={disabled || !hasSomething} style={{
+        width: "100%", marginTop: 18, padding: "16px 20px", borderRadius: 10, border: "none",
+        cursor: hasSomething && !disabled ? "pointer" : "not-allowed",
+        fontFamily: "'IBM Plex Sans', sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 0.5,
+        color: "#0a1420",
+        background: hasSomething && !disabled ? "linear-gradient(135deg, #e8c56a 0%, #d4a840 100%)" : "#1e2e3e",
+        opacity: hasSomething && !disabled ? 1 : 0.5,
+        transition: "all 0.2s ease",
+      }}>
+        🔬 Launch Investigation
+      </button>
+    </div>
+  );
+}
+
+function AgentCard({ agent, status, result, isLead }) {
+  const [expanded, setExpanded] = useState(false);
+  const statusColors = { pending: "#3a4a5a", running: "#e8c56a", done: "#4ECDC4", error: "#FF6B6B" };
+  const statusLabels = { pending: "Waiting", running: "Analysing...", done: "Complete", error: "Error" };
+
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.03)", borderRadius: 10,
+      border: `1px solid ${status === "done" ? agent.color + "33" : "#1e2e3e"}`,
+      overflow: "hidden",
+      transition: "border-color 0.3s ease",
+    }}>
+      <button onClick={() => result && setExpanded(!expanded)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 18px", background: "transparent", border: "none",
+        cursor: result ? "pointer" : "default", textAlign: "left",
+      }}>
+        <span style={{ fontSize: 20 }}>{agent.icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: agent.color }}>{agent.name}</div>
+          {isLead && <div style={{ fontSize: 10, color: "#4a6a7a", marginTop: 2 }}>Synthesising all specialist analyses</div>}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {status === "running" && (
+            <div style={{ width: 14, height: 14, border: `2px solid ${agent.color}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          )}
+          <span style={{ fontSize: 11, fontWeight: 600, color: statusColors[status], textTransform: "uppercase", letterSpacing: 0.8 }}>
+            {statusLabels[status]}
+          </span>
+          {result && (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6a7a" strokeWidth="2" strokeLinecap="round"
+              style={{ transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "rotate(0)" }}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+        </div>
+      </button>
+      {expanded && result && (
+        <div style={{ padding: "0 18px 16px", borderTop: "1px solid #1e2e3e", paddingTop: 14, fontSize: 13, lineHeight: 1.7 }}>
+          <Md text={result} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SynthesisView({ result }) {
+  if (!result) return null;
+  return (
+    <div style={{
+      background: "rgba(232,197,106,0.03)", borderRadius: 12,
+      border: "2px solid rgba(232,197,106,0.2)", padding: "24px",
+      marginTop: 16,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <span style={{ fontSize: 22 }}>📋</span>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#e8c56a" }}>Investigation Report</div>
+      </div>
+      <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+        <Md text={result} />
+      </div>
+    </div>
+  );
+}
+
+function InstrumentPanel() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", overflow: "hidden", marginBottom: 16 }}>
+      <button onClick={() => setOpen(!open)} style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "12px 18px",
+        background: "transparent", border: "none", cursor: "pointer", textAlign: "left",
+      }}>
+        <span style={{ fontSize: 14 }}>🔧</span>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#8ab4d0" }}>Available Instruments & Methods</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6a7a" strokeWidth="2" strokeLinecap="round"
+          style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0)" }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: "0 18px 16px", borderTop: "1px solid #1e2e3e", paddingTop: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#4ECDC4", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Internal (preferred)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+            {INTERNAL_INSTRUMENTS.map(i => (
+              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(78,205,196,0.08)", border: "1px solid rgba(78,205,196,0.15)", color: "#8ab4d0", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" — ")[0].split(" (")[0]}</span>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#FF6B6B", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>External (slower, flag early if needed)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {EXTERNAL_INSTRUMENTS.map(i => (
+              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.15)", color: "#c08080", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" (")[0]}</span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════
+function App() {
+  const [apiKey, setApiKey] = useState(() => {
+    try { return localStorage.getItem("fi-api-key") || ""; } catch { return ""; }
+  });
+  const [model, setModel] = useState(() => {
+    try { return localStorage.getItem("fi-model") || "claude-sonnet-4-6-20250514"; } catch { return "claude-sonnet-4-6-20250514"; }
+  });
+  const [phase, setPhase] = useState("input"); // input | analyzing | results
+  const [sampleText, setSampleText] = useState("");
+  const [agentStatuses, setAgentStatuses] = useState({});
+  const [agentResults, setAgentResults] = useState({});
+  const [synthesis, setSynthesis] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { try { localStorage.setItem("fi-api-key", apiKey); } catch {} }, [apiKey]);
+  useEffect(() => { try { localStorage.setItem("fi-model", model); } catch {} }, [model]);
+
+  const runInvestigation = useCallback(async (text) => {
+    if (!apiKey) { setError("Please enter your Anthropic API key."); return; }
+    setSampleText(text);
+    setPhase("analyzing");
+    setError(null);
+    setSynthesis(null);
+
+    const briefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\nAnalyse this sample. Provide your theories on what it is and how it formed. Recommend specific analytical tests from the available instruments.`;
+
+    // Initialize all statuses
+    const initStatus = {};
+    AGENTS.forEach(a => { initStatus[a.id] = "pending"; });
+    initStatus.lead = "pending";
+    setAgentStatuses(initStatus);
+    setAgentResults({});
+
+    // Run 6 domain specialists in parallel
+    const results = {};
+    const promises = AGENTS.map(async (agent) => {
+      setAgentStatuses(p => ({ ...p, [agent.id]: "running" }));
+      try {
+        const result = await callClaude(apiKey, model, agent.system, briefing, 2000);
+        results[agent.id] = result;
+        setAgentResults(p => ({ ...p, [agent.id]: result }));
+        setAgentStatuses(p => ({ ...p, [agent.id]: "done" }));
+      } catch (e) {
+        results[agent.id] = `Error: ${e.message}`;
+        setAgentResults(p => ({ ...p, [agent.id]: `Error: ${e.message}` }));
+        setAgentStatuses(p => ({ ...p, [agent.id]: "error" }));
+      }
+    });
+
+    await Promise.all(promises);
+
+    // Run Lead Investigator with all results
+    setAgentStatuses(p => ({ ...p, lead: "running" }));
+    try {
+      const specialistInputs = AGENTS.map(a =>
+        `## ${a.name} (${a.icon})\n${results[a.id] || "No response"}`
+      ).join("\n\n---\n\n");
+
+      const leadBriefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\n---\n\nSPECIALIST ANALYSES:\n\n${specialistInputs}\n\n---\n\nSynthesise all specialist analyses into a final investigation report. Rank the theories, design the analytical plan, and flag any external lab needs.`;
+
+      const leadResult = await callClaude(apiKey, model, LEAD_SYSTEM, leadBriefing, 4000);
+      setSynthesis(leadResult);
+      setAgentStatuses(p => ({ ...p, lead: "done" }));
+    } catch (e) {
+      setSynthesis(`Error: ${e.message}`);
+      setAgentStatuses(p => ({ ...p, lead: "error" }));
+    }
+
+    setPhase("results");
+  }, [apiKey, model]);
+
+  const resetInvestigation = () => {
+    setPhase("input");
+    setSampleText("");
+    setAgentStatuses({});
+    setAgentResults({});
+    setSynthesis(null);
+    setError(null);
+  };
+
+  const models = [
+    { id: "claude-sonnet-4-6-20250514", label: "Sonnet 4.6 (fast, recommended)" },
+    { id: "claude-opus-4-6-20250918", label: "Opus 4.6 (thorough, slower)" },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0f1923" }}>
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+      <Header />
+
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 16px 60px" }}>
+
+        {/* Settings */}
+        <ApiKeyInput apiKey={apiKey} setApiKey={setApiKey} />
+
+        <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#4a6a7a", textTransform: "uppercase", letterSpacing: 0.8 }}>Model:</span>
+          <select value={model} onChange={e => setModel(e.target.value)} style={{
+            fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "6px 10px",
+            border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#8ab4d0",
+            outline: "none", cursor: "pointer",
+          }}>
+            {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
+        </div>
+
+        <InstrumentPanel />
+
+        {error && (
+          <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#FF6B6B" }}>
+            {error}
+          </div>
+        )}
+
+        {/* Input phase */}
+        {phase === "input" && (
+          <SampleForm onSubmit={runInvestigation} disabled={!apiKey} />
+        )}
+
+        {/* Analyzing / Results phase */}
+        {(phase === "analyzing" || phase === "results") && (
+          <div>
+            {/* Sample summary */}
+            <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "16px 18px", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#e8c56a", textTransform: "uppercase", letterSpacing: 1 }}>Sample Brief</span>
+                <button onClick={resetInvestigation} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #1e2e3e", borderRadius: 6, padding: "4px 12px", cursor: "pointer", color: "#6a8a9a", fontSize: 11, fontWeight: 600 }}>
+                  New Investigation
+                </button>
+              </div>
+              <div style={{ fontSize: 12, color: "#8a9aaa", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                <Md text={sampleText} />
+              </div>
+            </div>
+
+            {/* Agent cards */}
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6a8a9a", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10, padding: "0 2px" }}>
+              Domain Specialists ({Object.values(agentStatuses).filter(s => s === "done").length - (agentStatuses.lead === "done" ? 1 : 0)}/{AGENTS.length} complete)
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+              {AGENTS.map(a => (
+                <AgentCard key={a.id} agent={a} status={agentStatuses[a.id] || "pending"} result={agentResults[a.id]} />
+              ))}
+            </div>
+
+            {/* Lead Investigator */}
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#e8c56a", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10, padding: "0 2px" }}>
+              Lead Investigator
+            </div>
+            <AgentCard
+              agent={{ id: "lead", name: "Lead Investigator", icon: "🎯", color: "#e8c56a" }}
+              status={agentStatuses.lead || "pending"}
+              result={null}
+              isLead
+            />
+
+            {/* Synthesis report */}
+            <SynthesisView result={synthesis} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+  </script>
+</body>
+</html>
