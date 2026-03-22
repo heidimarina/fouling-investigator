@@ -111,7 +111,7 @@ ${INTERNAL_INSTRUMENTS.map(i => `• ${i}`).join("\n")}
 EXTERNAL LABORATORY INSTRUMENTS AND METHODS (available but slower/more expensive — only recommend if internal methods cannot confirm a leading theory):
 ${EXTERNAL_INSTRUMENTS.map(i => `• ${i}`).join("\n")}
 
-ICP-OES METALS NOTE: Standards currently available for Al, Ba, Ca, Co, Cr, Cu, Fe, Mg, Mn, Ni, K, Na, V, Zn, P, Si, Sr, Mo. Standards for Ti, B, Sn, As, Li, W, Cd have been recommended but are not yet available — flag if any of these would be critical.
+ICP-OES METALS NOTE: Standards currently available for Al, Ba, Ca, Co, Cr, Cu, Fe, Mg, Mn, Ni, K, Na, V, Zn, P, Si, Sr, Mo.
 `.trim();
 
 // ═══════════════════════════════════════
@@ -333,8 +333,6 @@ INSTRUCTIONS:
    - STRONGLY prefer internal methods. Only recommend external methods if internal methods genuinely cannot answer a critical question.
 
 4. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
-
-5. **SUGGESTED ICP-OES ADDITIONS** — If any currently unavailable ICP-OES elements (Ti, B, Sn, As, Li, W, Cd) would be particularly valuable for this specific investigation, note which ones and why.
 
 Keep the total report focused and scannable. Use headers, bullet points, and bold text for key findings.`;
 
@@ -645,26 +643,77 @@ function InstrumentPanel() {
 }
 
 // ═══════════════════════════════════════
+// CLIPBOARD BRIEFING GENERATOR (Pro Plan mode)
+// ═══════════════════════════════════════
+function buildClaudeCodePrompt(sampleText) {
+  return `Run a fouling investigation on this sample. Use the Fouling Investigator agent swarm: spawn 6 domain specialist agents IN PARALLEL (Organic Fouling Chemist, Inorganic/Corrosion Specialist, Process Engineer, Contamination/External Source Analyst, Crude/Feedstock Chemistry Specialist, Thermal/Catalytic Degradation Specialist), then synthesise their outputs with a Lead Investigator agent.
+
+Each specialist should generate 2–4 theories with confidence ratings and recommended analytical tests. The Lead Investigator ranks theories, flags external lab needs early, and designs a phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation if needed). Prioritise internal methods first, fastest/easiest first.
+
+FOULING SAMPLE INVESTIGATION BRIEF:
+
+${sampleText}`;
+}
+
+// ═══════════════════════════════════════
+// COPIED CONFIRMATION TOAST
+// ═══════════════════════════════════════
+function CopiedToast({ show }) {
+  if (!show) return null;
+  return (
+    <div style={{
+      position: "fixed", bottom: 30, left: "50%", transform: "translateX(-50%)",
+      background: "#4ECDC4", color: "#0a1420", padding: "12px 24px", borderRadius: 10,
+      fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(78,205,196,0.3)",
+      zIndex: 9999, animation: "pulse 0.3s ease",
+    }}>
+      Copied to clipboard — paste into Claude Code
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
 // MAIN APP
 // ═══════════════════════════════════════
 function App() {
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem("fi-mode") || "pro"; } catch { return "pro"; }
+  });
   const [apiKey, setApiKey] = useState(() => {
     try { return localStorage.getItem("fi-api-key") || ""; } catch { return ""; }
   });
   const [model, setModel] = useState(() => {
     try { return localStorage.getItem("fi-model") || "claude-sonnet-4-6-20250514"; } catch { return "claude-sonnet-4-6-20250514"; }
   });
-  const [phase, setPhase] = useState("input"); // input | analyzing | results
+  const [phase, setPhase] = useState("input"); // input | copied | analyzing | results
   const [sampleText, setSampleText] = useState("");
   const [agentStatuses, setAgentStatuses] = useState({});
   const [agentResults, setAgentResults] = useState({});
   const [synthesis, setSynthesis] = useState(null);
   const [error, setError] = useState(null);
+  const [showCopied, setShowCopied] = useState(false);
 
+  useEffect(() => { try { localStorage.setItem("fi-mode", mode); } catch {} }, [mode]);
   useEffect(() => { try { localStorage.setItem("fi-api-key", apiKey); } catch {} }, [apiKey]);
   useEffect(() => { try { localStorage.setItem("fi-model", model); } catch {} }, [model]);
 
-  const runInvestigation = useCallback(async (text) => {
+  // Pro Plan mode: copy to clipboard
+  const handleProSubmit = useCallback(async (text) => {
+    setSampleText(text);
+    const prompt = buildClaudeCodePrompt(text);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 3000);
+      setPhase("copied");
+    } catch {
+      setError("Could not copy to clipboard. Please copy the briefing manually.");
+      setPhase("copied");
+    }
+  }, []);
+
+  // API mode: direct agent calls
+  const handleApiSubmit = useCallback(async (text) => {
     if (!apiKey) { setError("Please enter your Anthropic API key."); return; }
     setSampleText(text);
     setPhase("analyzing");
@@ -673,14 +722,12 @@ function App() {
 
     const briefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\nAnalyse this sample. Provide your theories on what it is and how it formed. Recommend specific analytical tests from the available instruments.`;
 
-    // Initialize all statuses
     const initStatus = {};
     AGENTS.forEach(a => { initStatus[a.id] = "pending"; });
     initStatus.lead = "pending";
     setAgentStatuses(initStatus);
     setAgentResults({});
 
-    // Run 6 domain specialists in parallel
     const results = {};
     const promises = AGENTS.map(async (agent) => {
       setAgentStatuses(p => ({ ...p, [agent.id]: "running" }));
@@ -698,7 +745,6 @@ function App() {
 
     await Promise.all(promises);
 
-    // Run Lead Investigator with all results
     setAgentStatuses(p => ({ ...p, lead: "running" }));
     try {
       const specialistInputs = AGENTS.map(a =>
@@ -727,32 +773,67 @@ function App() {
     setError(null);
   };
 
+  const handleSubmit = mode === "pro" ? handleProSubmit : handleApiSubmit;
+
   const models = [
     { id: "claude-sonnet-4-6-20250514", label: "Sonnet 4.6 (fast, recommended)" },
     { id: "claude-opus-4-6-20250918", label: "Opus 4.6 (thorough, slower)" },
   ];
+
+  const modeButtonStyle = (active) => ({
+    padding: "8px 16px", borderRadius: 6, border: "1px solid " + (active ? "#e8c56a55" : "#1e2e3e"),
+    background: active ? "rgba(232,197,106,0.1)" : "transparent",
+    color: active ? "#e8c56a" : "#4a6a7a",
+    cursor: "pointer", fontSize: 12, fontWeight: 600,
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    transition: "all 0.2s ease",
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1923" }}>
       <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
       <Header />
+      <CopiedToast show={showCopied} />
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 16px 60px" }}>
 
-        {/* Settings */}
-        <ApiKeyInput apiKey={apiKey} setApiKey={setApiKey} />
-
-        <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#4a6a7a", textTransform: "uppercase", letterSpacing: 0.8 }}>Model:</span>
-          <select value={model} onChange={e => setModel(e.target.value)} style={{
-            fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "6px 10px",
-            border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#8ab4d0",
-            outline: "none", cursor: "pointer",
-          }}>
-            {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-          </select>
+        {/* Mode selector */}
+        <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "14px 18px", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#8ab4d0", textTransform: "uppercase", letterSpacing: 1 }}>Mode</span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setMode("pro")} style={modeButtonStyle(mode === "pro")}>
+              Pro Plan — via Claude Code
+            </button>
+            <button onClick={() => setMode("api")} style={modeButtonStyle(mode === "api")}>
+              API Key — direct calls
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: "#3a5a6a", marginTop: 8, lineHeight: 1.6 }}>
+            {mode === "pro"
+              ? "Generates the investigation briefing and copies it to your clipboard. Paste it into Claude Code to run the agent swarm using your Pro subscription."
+              : "Calls the Anthropic API directly from this app. Requires an API key and uses pay-per-token billing."}
+          </div>
         </div>
+
+        {/* API key — only in API mode */}
+        {mode === "api" && <ApiKeyInput apiKey={apiKey} setApiKey={setApiKey} />}
+
+        {/* Model selector — only in API mode */}
+        {mode === "api" && (
+          <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#4a6a7a", textTransform: "uppercase", letterSpacing: 0.8 }}>Model:</span>
+            <select value={model} onChange={e => setModel(e.target.value)} style={{
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "6px 10px",
+              border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#8ab4d0",
+              outline: "none", cursor: "pointer",
+            }}>
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+          </div>
+        )}
 
         <InstrumentPanel />
 
@@ -764,13 +845,75 @@ function App() {
 
         {/* Input phase */}
         {phase === "input" && (
-          <SampleForm onSubmit={runInvestigation} disabled={!apiKey} />
+          <SampleForm onSubmit={handleSubmit} disabled={mode === "api" && !apiKey} />
         )}
 
-        {/* Analyzing / Results phase */}
-        {(phase === "analyzing" || phase === "results") && (
+        {/* Pro Plan: copied phase */}
+        {phase === "copied" && mode === "pro" && (
           <div>
-            {/* Sample summary */}
+            <div style={{ background: "rgba(78,205,196,0.06)", borderRadius: 12, border: "2px solid rgba(78,205,196,0.2)", padding: "24px", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 22 }}>📋</span>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#4ECDC4" }}>Briefing Ready</div>
+              </div>
+              <div style={{ fontSize: 13, color: "#8ab4d0", lineHeight: 1.8, marginBottom: 16 }}>
+                The investigation briefing has been copied to your clipboard. Next steps:
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, width: 32, height: 32, borderRadius: 8, background: "rgba(78,205,196,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>1</span>
+                  <div style={{ fontSize: 13, color: "#d0d8e0", lineHeight: 1.6, paddingTop: 4 }}>
+                    Open <strong>Claude Code</strong> in your terminal
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, width: 32, height: 32, borderRadius: 8, background: "rgba(78,205,196,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</span>
+                  <div style={{ fontSize: 13, color: "#d0d8e0", lineHeight: 1.6, paddingTop: 4 }}>
+                    <strong>Paste</strong> the briefing (Cmd+V) and press Enter
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, width: 32, height: 32, borderRadius: 8, background: "rgba(78,205,196,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
+                  <div style={{ fontSize: 13, color: "#d0d8e0", lineHeight: 1.6, paddingTop: 4 }}>
+                    Claude Code runs the <strong>7-agent swarm</strong> using your Pro subscription — no API costs
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+                <button onClick={async () => {
+                  const prompt = buildClaudeCodePrompt(sampleText);
+                  try { await navigator.clipboard.writeText(prompt); setShowCopied(true); setTimeout(() => setShowCopied(false), 3000); } catch {}
+                }} style={{
+                  padding: "10px 20px", borderRadius: 8, border: "1px solid rgba(78,205,196,0.3)",
+                  background: "rgba(78,205,196,0.1)", color: "#4ECDC4", cursor: "pointer",
+                  fontSize: 13, fontWeight: 600, fontFamily: "'IBM Plex Sans', sans-serif",
+                }}>
+                  Copy Again
+                </button>
+                <button onClick={resetInvestigation} style={{
+                  padding: "10px 20px", borderRadius: 8, border: "1px solid #1e2e3e",
+                  background: "rgba(255,255,255,0.03)", color: "#6a8a9a", cursor: "pointer",
+                  fontSize: 13, fontWeight: 600, fontFamily: "'IBM Plex Sans', sans-serif",
+                }}>
+                  New Investigation
+                </button>
+              </div>
+            </div>
+
+            {/* Show the briefing */}
+            <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "16px 18px" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#e8c56a", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Sample Brief</div>
+              <div style={{ fontSize: 12, color: "#8a9aaa", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.7 }}>
+                <Md text={sampleText} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* API mode: Analyzing / Results phase */}
+        {(phase === "analyzing" || phase === "results") && mode === "api" && (
+          <div>
             <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "16px 18px", marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#e8c56a", textTransform: "uppercase", letterSpacing: 1 }}>Sample Brief</span>
@@ -783,7 +926,6 @@ function App() {
               </div>
             </div>
 
-            {/* Agent cards */}
             <div style={{ fontSize: 12, fontWeight: 700, color: "#6a8a9a", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10, padding: "0 2px" }}>
               Domain Specialists ({Object.values(agentStatuses).filter(s => s === "done").length - (agentStatuses.lead === "done" ? 1 : 0)}/{AGENTS.length} complete)
             </div>
@@ -793,7 +935,6 @@ function App() {
               ))}
             </div>
 
-            {/* Lead Investigator */}
             <div style={{ fontSize: 12, fontWeight: 700, color: "#e8c56a", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10, padding: "0 2px" }}>
               Lead Investigator
             </div>
@@ -804,7 +945,6 @@ function App() {
               isLead
             />
 
-            {/* Synthesis report */}
             <SynthesisView result={synthesis} />
           </div>
         )}
