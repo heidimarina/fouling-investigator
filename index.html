@@ -466,13 +466,13 @@ function Header() {
 function AboutPanel() {
   const [open, setOpen] = useState(true);
   const agentInfo = [
-    { icon: "🧪", name: "Organic Fouling Chemist", color: "#4ECDC4", desc: "Asphaltene precipitation, thermal polymerisation, coke formation, wax deposition, gum/varnish formation, biological fouling (MIC/SRB), additive degradation" },
-    { icon: "⚙️", name: "Inorganic / Corrosion Specialist", color: "#FF6B6B", desc: "Scale formation (CaCO₃, CaSO₄, BaSO₄), corrosion products (FeS, Fe₂O₃), ammonium salts, catalyst fines carryover, under-deposit corrosion, chloride attack" },
-    { icon: "🏭", name: "Process Engineer", color: "#45B7D1", desc: "Phase behaviour, flow maldistribution, velocity profiles, thermal boundary layers, pressure-temperature envelopes, ΔP diagnostics, equipment bypass effects" },
-    { icon: "🔍", name: "Contamination Analyst", color: "#96E6A1", desc: "Crude incompatibility, cross-contamination, chemical injection issues, upstream debris, air/water ingress, construction debris, off-spec deliveries" },
-    { icon: "🛢️", name: "Feedstock Chemistry", color: "#DDA0DD", desc: "Crude blend stability (CII/SBN/IN), opportunity crude risks, desalter performance, formation water chemistry, production chemical carryover" },
-    { icon: "🔥", name: "Thermal / Catalytic Degradation", color: "#F7DC6F", desc: "Thermal cracking kinetics, catalytic coking (V/Ni/Fe surfaces), dry-point precipitation, mesophase coke, autoxidation, residence time effects" },
-    { icon: "🎯", name: "Lead Investigator", color: "#e8c56a", desc: "Synthesises all specialist findings, resolves disagreements, ranks theories with calibrated confidence, designs phased analytical plans" },
+    { icon: "🧪", name: "Organic Fouling Chemist", color: "#4ECDC4", desc: "Specialises in asphaltene precipitation, thermal polymerisation, coke formation, wax deposition, gum/varnish formation, biological fouling (MIC/SRB), and additive degradation products." },
+    { icon: "⚙️", name: "Inorganic / Corrosion Specialist", color: "#FF6B6B", desc: "Specialises in scale formation (CaCO₃, CaSO₄, BaSO₄), corrosion products (FeS, Fe₂O₃), ammonium salt deposition, catalyst fines carryover, under-deposit corrosion, and chloride attack mechanisms." },
+    { icon: "🏭", name: "Process Engineer", color: "#45B7D1", desc: "Specialises in phase behaviour analysis, flow maldistribution, velocity profiles, thermal boundary layers, pressure-temperature envelopes, ΔP diagnostics, and equipment bypass effects." },
+    { icon: "🔍", name: "Contamination Analyst", color: "#96E6A1", desc: "Specialises in crude incompatibility, cross-contamination pathways, chemical injection issues, upstream debris transport, air/water ingress, and off-spec chemical deliveries." },
+    { icon: "🛢️", name: "Feedstock Chemistry", color: "#DDA0DD", desc: "Specialises in crude blend stability (CII/SBN/IN), opportunity crude risks, desalter performance, formation water chemistry, and production chemical carryover." },
+    { icon: "🔥", name: "Thermal / Catalytic Degradation", color: "#F7DC6F", desc: "Specialises in thermal cracking kinetics, catalytic coking on V/Ni/Fe surfaces, dry-point precipitation, mesophase coke formation, autoxidation, and residence time effects." },
+    { icon: "🎯", name: "Lead Investigator", color: "#e8c56a", desc: "Specialises in synthesising all specialist findings, resolving cross-domain disagreements, ranking theories with calibrated confidence, and designing phased analytical plans." },
   ];
 
   return (
@@ -873,7 +873,15 @@ After delivering the report, stay in investigation mode. The chemist will come b
 - Their own observations or ideas
 - New data or context
 
-When they do, UPDATE your theory ranking with revised confidence percentages, explain what the new data confirms or rules out, suggest next steps, and continue collaborating like a fellow detective working the case together. Keep the full investigation context in mind. Be direct — if a result kills a theory, say so clearly. If it confirms one, celebrate the progress and focus the next steps.
+When they do, UPDATE your theory ranking with revised confidence percentages, explain what the new data confirms or rules out, suggest next steps, and continue collaborating like a fellow detective working the case together. Be direct — if a result kills a theory, say so clearly. If it confirms one, celebrate the progress and focus the next steps.
+
+**HARD RULE — CONTEXT RETENTION:**
+You MUST retain ALL information about the sample throughout the entire conversation. This includes:
+- Everything from the initial investigation brief (the form data)
+- Every piece of information the chemist provides in follow-up messages (analytical results, observations, operational data, ideas)
+- All theories, confidence levels, and reasoning from the initial report
+- All updates and revisions made during the collaborative phase
+NEVER forget, lose, or fail to reference any previously provided sample information. All data is cumulative — every new result adds to the picture, nothing replaces what came before unless explicitly corrected. When giving updated theories, reference both the original evidence AND the new data together. The chemist should never have to repeat themselves.
 
 FOULING SAMPLE INVESTIGATION BRIEF:
 
