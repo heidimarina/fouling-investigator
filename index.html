@@ -140,11 +140,11 @@ ${INSTRUMENT_TEXT}
 INSTRUCTIONS:
 Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
 1. Give it a clear name
-2. Rate confidence: HIGH / MEDIUM / LOW
+2. Rate confidence as a percentage (0–100%) with a qualifier (e.g. "75% — HIGH: strong physical evidence, mechanism well-understood" or "30% — LOW: plausible but speculative, no direct evidence yet"). Be honest and calibrated — a wrong confident answer can cost millions in misdirected investigation. Explain in 1 sentence WHY you assigned that confidence level.
 3. Explain the mechanism concisely (2–4 sentences)
 4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first
+5. List what doesn't fit or what's uncertain — be explicit about gaps
+6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
 
 Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry. Do not hedge excessively. If you see something, say it.`
   },
@@ -171,11 +171,11 @@ ${INSTRUMENT_TEXT}
 INSTRUCTIONS:
 Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
 1. Give it a clear name
-2. Rate confidence: HIGH / MEDIUM / LOW
+2. Rate confidence as a percentage (0–100%) with a qualifier (e.g. "75% — HIGH: strong physical evidence, mechanism well-understood" or "30% — LOW: plausible but speculative, no direct evidence yet"). Be honest and calibrated — a wrong confident answer can cost millions in misdirected investigation. Explain in 1 sentence WHY you assigned that confidence level.
 3. Explain the mechanism concisely (2–4 sentences)
 4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first
+5. List what doesn't fit or what's uncertain — be explicit about gaps
+6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
 
 Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry.`
   },
@@ -317,22 +317,32 @@ You are sharp, curious, and decisive. You cut through noise, identify the strong
 
 ${INSTRUMENT_TEXT}
 
+IMPORTANT — CONFIDENCE CALIBRATION:
+Fouling misdiagnosis can cost millions in downtime, wrong chemical treatments, or unnecessary shutdowns. Your confidence ratings carry real financial weight. Be honest and well-calibrated:
+- State confidence as a percentage (0–100%) with a qualifier (HIGH/MEDIUM/LOW)
+- Distinguish between "evidence strongly supports this" vs "this is plausible but speculative"
+- If specialists disagree, explain why and what would resolve the disagreement
+- Never inflate confidence to appear decisive — an honest 35% is more valuable than a dishonest 70%
+
 INSTRUCTIONS:
 1. **THEORY RANKING** — Review all theories from the 6 specialists. Identify the top 3–5 most plausible theories. For each:
    - State the theory name and which specialist(s) proposed it
-   - Give your confidence assessment: HIGH / MEDIUM / LOW
-   - Briefly explain why you rank it where you do (1–2 sentences)
+   - Give your confidence assessment as a percentage with qualifier (e.g. "65% — MEDIUM")
+   - Explain why you rank it where you do (1–2 sentences) — cite specific evidence
    - Note if multiple specialists converged on the same mechanism (strengthens confidence)
+   - Note if specialists disagreed on this mechanism and why
 
-2. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right.
+2. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right. State what evidence would elevate these.
 
 3. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
    - Order tests from fastest/easiest to most complex
-   - For each test, state what it would confirm or rule out
+   - For each test, state what it would confirm or rule out, and what specific result to look for
    - Group into phases: Phase 1 (quick screening, do immediately), Phase 2 (targeted confirmation), Phase 3 (deep characterisation if needed)
    - STRONGLY prefer internal methods. Only recommend external methods if internal methods genuinely cannot answer a critical question.
 
 4. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
+
+5. **WHAT WOULD CHANGE MY MIND** — For the top 2 theories, explicitly state what analytical result would make you abandon each theory. This is critical for efficient investigation.
 
 Keep the total report focused and scannable. Use headers, bullet points, and bold text for key findings.`;
 
@@ -646,9 +656,11 @@ function InstrumentPanel() {
 // CLIPBOARD BRIEFING GENERATOR (Pro Plan mode)
 // ═══════════════════════════════════════
 function buildClaudeCodePrompt(sampleText) {
-  return `Run a fouling investigation on this sample. Use the Fouling Investigator agent swarm: spawn 6 domain specialist agents IN PARALLEL (Organic Fouling Chemist, Inorganic/Corrosion Specialist, Process Engineer, Contamination/External Source Analyst, Crude/Feedstock Chemistry Specialist, Thermal/Catalytic Degradation Specialist), then synthesise their outputs with a Lead Investigator agent.
+  return `Run a fouling investigation on this sample using Claude Opus 4.6 for all agents. Use the Fouling Investigator agent swarm: spawn 6 domain specialist agents IN PARALLEL (Organic Fouling Chemist, Inorganic/Corrosion Specialist, Process Engineer, Contamination/External Source Analyst, Crude/Feedstock Chemistry Specialist, Thermal/Catalytic Degradation Specialist), then synthesise their outputs with a Lead Investigator agent.
 
-Each specialist should generate 2–4 theories with confidence ratings and recommended analytical tests. The Lead Investigator ranks theories, flags external lab needs early, and designs a phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation if needed). Prioritise internal methods first, fastest/easiest first.
+CRITICAL — CONFIDENCE CALIBRATION: Fouling misdiagnosis can cost millions. Each specialist must rate confidence as a percentage (0–100%) with justification — distinguish "strong evidence" from "plausible but speculative". Never inflate confidence. An honest 35% is more valuable than a dishonest 70%.
+
+Each specialist should generate 2–4 theories. For each theory: confidence % with justification, mechanism explanation, supporting evidence, gaps/uncertainties, and recommended analytical tests (stating what result would confirm vs rule out each theory). The Lead Investigator ranks theories, flags external lab needs early, states what would change their mind on top theories, and designs a phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation if needed). Prioritise internal methods first, fastest/easiest first.
 
 FOULING SAMPLE INVESTIGATION BRIEF:
 
@@ -682,9 +694,7 @@ function App() {
   const [apiKey, setApiKey] = useState(() => {
     try { return localStorage.getItem("fi-api-key") || ""; } catch { return ""; }
   });
-  const [model, setModel] = useState(() => {
-    try { return localStorage.getItem("fi-model") || "claude-sonnet-4-6-20250514"; } catch { return "claude-sonnet-4-6-20250514"; }
-  });
+  const model = "claude-opus-4-6-20250918";
   const [phase, setPhase] = useState("input"); // input | copied | analyzing | results
   const [sampleText, setSampleText] = useState("");
   const [agentStatuses, setAgentStatuses] = useState({});
@@ -695,7 +705,6 @@ function App() {
 
   useEffect(() => { try { localStorage.setItem("fi-mode", mode); } catch {} }, [mode]);
   useEffect(() => { try { localStorage.setItem("fi-api-key", apiKey); } catch {} }, [apiKey]);
-  useEffect(() => { try { localStorage.setItem("fi-model", model); } catch {} }, [model]);
 
   // Pro Plan mode: copy to clipboard
   const handleProSubmit = useCallback(async (text) => {
@@ -775,11 +784,6 @@ function App() {
 
   const handleSubmit = mode === "pro" ? handleProSubmit : handleApiSubmit;
 
-  const models = [
-    { id: "claude-sonnet-4-6-20250514", label: "Sonnet 4.6 (fast, recommended)" },
-    { id: "claude-opus-4-6-20250918", label: "Opus 4.6 (thorough, slower)" },
-  ];
-
   const modeButtonStyle = (active) => ({
     padding: "8px 16px", borderRadius: 6, border: "1px solid " + (active ? "#e8c56a55" : "#1e2e3e"),
     background: active ? "rgba(232,197,106,0.1)" : "transparent",
@@ -821,17 +825,11 @@ function App() {
         {/* API key — only in API mode */}
         {mode === "api" && <ApiKeyInput apiKey={apiKey} setApiKey={setApiKey} />}
 
-        {/* Model selector — only in API mode */}
+        {/* Model info — only in API mode */}
         {mode === "api" && (
           <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: "#4a6a7a", textTransform: "uppercase", letterSpacing: 0.8 }}>Model:</span>
-            <select value={model} onChange={e => setModel(e.target.value)} style={{
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "6px 10px",
-              border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#8ab4d0",
-              outline: "none", cursor: "pointer",
-            }}>
-              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-            </select>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#e8c56a" }}>Claude Opus 4.6</span>
           </div>
         )}
 
