@@ -129,12 +129,8 @@ Do not just identify WHAT is depositing. You must think about:
 const SHARED_INSTRUCTIONS = `
 INSTRUCTIONS:
 
-**STEP 1 — MISSING INFORMATION (do this first):**
-Before generating theories, list 3–5 pieces of information that are NOT in the brief but would significantly change your analysis if known. For each, explain what it would tell you and which theory it would strengthen or weaken. Format as:
-- **[Info needed]:** [Why it matters — what it would confirm/rule out]
-
-**STEP 2 — THEORIES (2–4):**
-For each theory:
+**STEP 1 — THEORIES (2–4):**
+Always give your best theories based on the information available. Do not wait for more data. For each theory:
 1. Give it a clear name
 2. Rate confidence as a percentage (0–100%) with a qualifier. Explain in 1 sentence WHY you assigned that confidence level.
 3. Explain the mechanism concisely (2–4 sentences) — include WHY HERE and WHY NOW
@@ -142,8 +138,10 @@ For each theory:
 5. List what doesn't fit or what's uncertain — be explicit about gaps
 6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
 
-**STEP 3 — INFORMATION REQUESTS:**
-If there is specific information that the investigating chemist could look up or check right now (e.g. operating logs, DCS trends, maintenance records, upstream equipment condition, water treatment records, chemical injection logs, crude assay data) that would help you narrow down theories, list these as specific questions. Frame each as: "Can you check [X]? If [Y], it supports Theory [N]; if [Z], it weakens it."
+**STEP 2 — WHAT WOULD SHARPEN THIS DIAGNOSIS:**
+After your theories, list information that the investigating chemist could look up or provide that would significantly strengthen or weaken specific theories. Frame each as:
+- "If you can check [X]: finding [Y] would raise Theory [N] to ~[higher %]; finding [Z] would drop it to ~[lower %]"
+These are not prerequisites — your theories above stand on their own. These are refinement opportunities.
 `;
 
 // ═══════════════════════════════════════
@@ -370,9 +368,7 @@ Fouling misdiagnosis can cost millions in downtime, wrong chemical treatments, o
 
 INSTRUCTIONS:
 
-1. **CRITICAL INFORMATION GAPS** — Before ranking theories, list the top 3–5 pieces of information that are missing from the brief and would most impact the diagnosis. For each, state what it would confirm/rule out. Frame these as specific questions the investigating chemist can go check RIGHT NOW (operating logs, DCS trends, maintenance records, water treatment data, crude assay data, chemical injection records, upstream equipment condition). This section helps the chemist provide additional information to refine the analysis.
-
-2. **THEORY RANKING** — Review all theories from the 6 specialists AND their cross-review insights. Identify the top 3–5 most plausible theories. For each:
+1. **THEORY RANKING** — Review all theories from the 6 specialists AND their cross-review insights. Identify the top 3–5 most plausible theories. For each:
    - State the theory name and which specialist(s) proposed it
    - Give your confidence assessment as a percentage with qualifier (e.g. "65% — MEDIUM")
    - Explain why you rank it where you do (1–2 sentences) — cite specific evidence
@@ -380,19 +376,19 @@ INSTRUCTIONS:
    - Note if specialists disagreed on this mechanism and why
    - Note any SYNERGISTIC mechanisms identified in the challenge round
 
-3. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right. State what evidence would elevate these.
+2. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right. State what evidence would elevate these.
 
-4. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
+3. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
    - Order tests from fastest/easiest to most complex
    - For each test, state what it would confirm or rule out, and what specific result to look for
    - Group into phases: Phase 1 (quick screening, do immediately), Phase 2 (targeted confirmation), Phase 3 (deep characterisation if needed)
    - STRONGLY prefer internal methods. Only recommend external methods if internal methods genuinely cannot answer a critical question.
 
-5. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
+4. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
 
-6. **WHAT WOULD CHANGE MY MIND** — For the top 2 theories, explicitly state what analytical result would make you abandon each theory. This is critical for efficient investigation.
+5. **WHAT WOULD CHANGE MY MIND** — For the top 2 theories, explicitly state what analytical result would make you abandon each theory. This is critical for efficient investigation.
 
-7. **QUESTIONS FOR THE INVESTIGATING CHEMIST** — Compile the most impactful information requests from all specialists into a prioritised list. Frame as specific, answerable questions. These help the chemist provide additional data that could immediately sharpen the diagnosis.
+6. **WHAT WOULD SHARPEN THIS DIAGNOSIS** — Compile the most useful information requests from all specialists. Frame as: "If you can check [X]: finding [Y] would raise Theory [N] confidence; finding [Z] would lower it." These are things the chemist can look up right now (operating logs, DCS trends, maintenance records, water treatment data, chemical injection records, crude assays) to immediately refine the analysis. This is NOT a prerequisite — the theories above stand on their own.
 
 Keep the total report focused and scannable. Use headers, bullet points, and bold text for key findings.`;
 
@@ -751,9 +747,8 @@ Spawn 6 domain specialist agents IN PARALLEL:
 6. Thermal/Catalytic Degradation Specialist
 
 Each specialist MUST:
-- **FIRST** list 3–5 missing pieces of information that would most impact their analysis, with what each would confirm/rule out
-- **THEN** generate 2–4 theories with: confidence % (0–100%) with justification, mechanism explanation (including WHY HERE and WHY NOW), supporting evidence, gaps/uncertainties, recommended analytical tests (what confirms vs rules out)
-- **FINALLY** list specific questions for the investigating chemist — information they could look up right now (operating logs, DCS trends, maintenance records, chemical injection records, crude assay data, water treatment data) that would sharpen the diagnosis
+- **FIRST** generate 2–4 theories based on the information available. Do NOT wait for more data. For each theory: confidence % (0–100%) with justification, mechanism explanation (including WHY HERE and WHY NOW), supporting evidence, gaps/uncertainties, recommended analytical tests (what confirms vs rules out)
+- **THEN** list what information the investigating chemist could provide to sharpen the diagnosis. Frame as: "If you can check [X]: finding [Y] would raise Theory [N] confidence; finding [Z] would lower it." These are refinement opportunities, not prerequisites — the theories stand on their own.
 
 CRITICAL THINKING REQUIREMENTS FOR ALL SPECIALISTS:
 - Don't just identify WHAT is depositing — explain WHY at this location and WHY at this time
@@ -774,15 +769,21 @@ After all 6 specialists report, run a cross-review where each specialist sees th
 
 **PHASE 3 — LEAD INVESTIGATOR SYNTHESIS:**
 A Lead Investigator synthesises all specialist analyses AND the challenge round into a final report:
-1. Critical information gaps — top 5 missing pieces of info as specific questions the chemist can go check right now
-2. Theory ranking — top 3–5 theories with confidence %, noting specialist convergence, disagreements, and synergies from the challenge round
-3. Dissenting views worth preserving
-4. Phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation)
-5. External lab alert if needed
-6. "What would change my mind" for top 2 theories
-7. Prioritised questions for the investigating chemist — things they can check immediately to refine the diagnosis
+1. Theory ranking — top 3–5 theories with confidence %, noting specialist convergence, disagreements, and synergies from the challenge round
+2. Dissenting views worth preserving
+3. Phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation). Prioritise internal methods first, fastest/easiest first.
+4. External lab alert if needed
+5. "What would change my mind" for top 2 theories
+6. "What would sharpen this diagnosis" — things the chemist can check or provide (operating logs, DCS data, crude assays, maintenance records, water treatment data) that would immediately refine confidence on specific theories. Frame as: "If [X], Theory [N] goes up; if [Y], it goes down."
 
-Prioritise internal methods first, fastest/easiest first.
+**PHASE 4 — COLLABORATIVE INVESTIGATION MODE:**
+After delivering the report, stay in investigation mode. The chemist will come back with:
+- Results from analytical tests you recommended
+- Answers to your information requests
+- Their own observations or ideas
+- New data or context
+
+When they do, UPDATE your theory ranking with revised confidence percentages, explain what the new data confirms or rules out, suggest next steps, and continue collaborating like a fellow detective working the case together. Keep the full investigation context in mind. Be direct — if a result kills a theory, say so clearly. If it confirms one, celebrate the progress and focus the next steps.
 
 FOULING SAMPLE INVESTIGATION BRIEF:
 
@@ -1010,7 +1011,7 @@ function App() {
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{ fontSize: 20, width: 32, height: 32, borderRadius: 8, background: "rgba(78,205,196,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
                   <div style={{ fontSize: 13, color: "#d0d8e0", lineHeight: 1.6, paddingTop: 4 }}>
-                    Claude Code runs the <strong>7-agent swarm</strong> using your Pro subscription — no API costs
+                    Claude Code runs the <strong>7-agent investigation</strong> using your Pro subscription — no API costs. After the report, keep chatting to feed back results, bounce ideas, and narrow down the root cause together.
                   </div>
                 </div>
               </div>
