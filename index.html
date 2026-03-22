@@ -64,7 +64,7 @@ const INTERNAL_INSTRUMENTS = [
   "Basic nitrogen analysis",
   "Mercaptan sulphur analysis",
   "Salt in crude analyser",
-  "Hg analyser (MA-3000) — water and oil samples",
+  "Mercury (Hg) content analysis (MA-3000) — water and oil samples",
   "Vapour pressure analyser",
   "Pour point",
   "Cloud point",
@@ -628,13 +628,13 @@ function InstrumentPanel() {
           <div style={{ fontSize: 11, fontWeight: 700, color: "#4ECDC4", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Internal (preferred)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
             {INTERNAL_INSTRUMENTS.map(i => (
-              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(78,205,196,0.08)", border: "1px solid rgba(78,205,196,0.15)", color: "#8ab4d0", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" — ")[0].split(" (")[0]}</span>
+              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(78,205,196,0.08)", border: "1px solid rgba(78,205,196,0.15)", color: "#8ab4d0", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" — ")[0]}</span>
             ))}
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#FF6B6B", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>External (slower, flag early if needed)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {EXTERNAL_INSTRUMENTS.map(i => (
-              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.15)", color: "#c08080", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" (")[0]}</span>
+              <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.15)", color: "#c08080", fontFamily: "'IBM Plex Mono', monospace" }}>{i.split(" — ")[0]}</span>
             ))}
           </div>
         </div>
