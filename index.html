@@ -106,6 +106,47 @@ ICP-OES METALS NOTE: Standards currently available for Al, Ba, Ca, Co, Cr, Cu, F
 `.trim();
 
 // ═══════════════════════════════════════
+// SHARED INSTRUCTIONS FOR ALL SPECIALISTS
+// ═══════════════════════════════════════
+const SHARED_PREAMBLE = `
+IMPORTANT — CONFIDENCE CALIBRATION:
+Fouling misdiagnosis can cost millions in downtime, wrong chemical treatments, or unnecessary shutdowns. Your confidence ratings carry real financial weight.
+- Rate confidence as a percentage (0–100%) with a qualifier (HIGH/MEDIUM/LOW)
+- Distinguish "strong evidence supports this" from "plausible but speculative"
+- If a single observation is nearly pathognomonic (e.g. 6 cm rust deposits in fresh water in 18 months → IOB), say so and weight it accordingly. Do not artificially spread confidence across theories for the sake of appearing balanced.
+- An honest 35% is more valuable than a dishonest 70%
+
+CRITICAL THINKING — MECHANISM SPECIFICITY:
+Do not just identify WHAT is depositing. You must think about:
+- **WHY HERE?** — What is specific about this location in the process that causes deposition here and not elsewhere?
+- **WHY NOW?** — What changed? Consider: feed/crude changes, routing changes, process parameter shifts, startup/shutdown transients, seasonal effects, equipment ageing, chemical program changes
+- **PHASE CHANGES** — Consider vaporisation, condensation, crystallisation transitions, inverse solubility, dry-point precipitation, dew-point salt formation
+- **TRANSIENT OPERATIONS** — Startups, shutdowns, drum switches, feed changes, upsets — these are often the trigger that steady-state analysis misses
+- **UPSTREAM SOURCES** — Debris transport, filtration failures, carryover from upstream equipment, corrosion product migration
+- **SYNERGISTIC MECHANISMS** — Your fouling type may enable or accelerate another specialist's fouling type (e.g. organic gums trapping inorganic fines, biofilm creating anaerobic zones for SRB)
+`;
+
+const SHARED_INSTRUCTIONS = `
+INSTRUCTIONS:
+
+**STEP 1 — MISSING INFORMATION (do this first):**
+Before generating theories, list 3–5 pieces of information that are NOT in the brief but would significantly change your analysis if known. For each, explain what it would tell you and which theory it would strengthen or weaken. Format as:
+- **[Info needed]:** [Why it matters — what it would confirm/rule out]
+
+**STEP 2 — THEORIES (2–4):**
+For each theory:
+1. Give it a clear name
+2. Rate confidence as a percentage (0–100%) with a qualifier. Explain in 1 sentence WHY you assigned that confidence level.
+3. Explain the mechanism concisely (2–4 sentences) — include WHY HERE and WHY NOW
+4. List supporting evidence from the sample description
+5. List what doesn't fit or what's uncertain — be explicit about gaps
+6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
+
+**STEP 3 — INFORMATION REQUESTS:**
+If there is specific information that the investigating chemist could look up or check right now (e.g. operating logs, DCS trends, maintenance records, upstream equipment condition, water treatment records, chemical injection logs, crude assay data) that would help you narrow down theories, list these as specific questions. Frame each as: "Can you check [X]? If [Y], it supports Theory [N]; if [Z], it weakens it."
+`;
+
+// ═══════════════════════════════════════
 // AGENT PROFILES
 // ═══════════════════════════════════════
 const AGENTS = [
@@ -126,16 +167,16 @@ Your expertise covers:
 - Organic acid corrosion products and soap formation
 - Additive degradation products and incompatibility
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- Consider whether the organic fraction is the PRIMARY foulant or an ADHESION PROMOTER/BINDER for inorganic particles
+- Asphaltenes can act as encapsulants, emulsifiers, and nucleation agents even at very low concentrations (<0.1%)
+- Distinguish between: (a) thermal coke (high C, low H), (b) polymerised gums (moderate C, higher H, solvent-soluble), (c) oxidised deposits (C=O, S=O bands), (d) biological organics (amide/polysaccharide bands)
+- Diolefins (especially from cracked stocks) are orders of magnitude more reactive than mono-olefins
+- Consider oxygen exposure during storage or transport as a polymerisation initiator
 
-INSTRUCTIONS:
-Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
-1. Give it a clear name
-2. Rate confidence as a percentage (0–100%) with a qualifier (e.g. "75% — HIGH: strong physical evidence, mechanism well-understood" or "30% — LOW: plausible but speculative, no direct evidence yet"). Be honest and calibrated — a wrong confident answer can cost millions in misdirected investigation. Explain in 1 sentence WHY you assigned that confidence level.
-3. Explain the mechanism concisely (2–4 sentences)
-4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain — be explicit about gaps
-6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry. Do not hedge excessively. If you see something, say it.`
   },
@@ -157,16 +198,16 @@ Your expertise covers:
 - Chloride-induced corrosion and under-deposit corrosion
 - Metal compound deposition and speciation
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- Distinguish between corrosion PRODUCTS (formed in situ from the equipment itself) and TRANSPORTED solids (formed upstream and carried to this location)
+- Consider whether inorganic deposits are the PRIMARY foulant or were TRAPPED by an organic matrix
+- Iron oxide species can be biogenic (from iron-oxidizing bacteria) — if deposits are voluminous relative to the timeframe, consider MIC
+- CaSO₄ has INVERSE solubility — precipitates as temperature INCREASES. CaCO₃ can go either way depending on CO₂ partial pressure.
+- Always consider whether the deposit mineralogy could be a shutdown/sampling artefact (e.g. FeS oxidising to Fe₂O₃ upon air exposure)
 
-INSTRUCTIONS:
-Given a fouling sample description, provide 2–4 theories for what the sample is and how it formed. For each theory:
-1. Give it a clear name
-2. Rate confidence as a percentage (0–100%) with a qualifier (e.g. "75% — HIGH: strong physical evidence, mechanism well-understood" or "30% — LOW: plausible but speculative, no direct evidence yet"). Be honest and calibrated — a wrong confident answer can cost millions in misdirected investigation. Explain in 1 sentence WHY you assigned that confidence level.
-3. Explain the mechanism concisely (2–4 sentences)
-4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain — be explicit about gaps
-6. Recommend 2–4 specific analytical tests (from the instrument list) that would confirm or refute this theory — prioritise internal methods, fastest/easiest first. For each test, state what result would CONFIRM and what result would RULE OUT this theory
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Use appropriate chemistry jargon — the reader has a PhD in chemistry.`
   },
@@ -189,16 +230,16 @@ Your expertise covers:
 - Temperature excursion impacts on deposit formation
 - Pressure drop anomalies as fouling indicators
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- ΔP rising with stable U = tube plugging (solids/particulates). ΔP rising with falling U = film/insulating fouling. Both rising = combined mechanism.
+- Consider the PRESSURE-TEMPERATURE ENVELOPE: where in the process does the fluid cross phase boundaries, salt points, wax appearance temperatures, or asphaltene instability thresholds?
+- Think about what the INTERMEDIATE EQUIPMENT does: tanks provide settling/blending/dampening; filters remove particulates; desalters remove water/salts. If any was bypassed or underperforming, what protective function was lost?
+- Map the VELOCITY PROFILE: where are the stagnation zones, pass transitions, and flow restrictions? Low velocity = settling; high velocity = erosion-corrosion.
+- Consider the THERMAL BOUNDARY LAYER: wall temperature ≠ bulk temperature. Hot walls promote coking; cold walls promote wax/salt crystallisation.
 
-INSTRUCTIONS:
-Given a fouling sample description, focus on WHERE and WHY in the process this fouling formed. Provide 2–4 theories:
-1. Give it a clear name referencing the process mechanism
-2. Rate confidence: HIGH / MEDIUM / LOW
-3. Explain what process conditions led to this — temperature regimes, flow patterns, phase behaviour
-4. List supporting evidence from the sample description and location
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 analytical tests that would differentiate between process-related causes — prioritise internal methods, fastest/easiest first
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Use appropriate jargon.`
   },
@@ -222,16 +263,16 @@ Your expertise covers:
 - Off-spec chemical deliveries
 - Grease contamination from pumps, valves, flanges
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- Always ask: "What enters the system that isn't supposed to be there?" — water, air, chemicals, debris, other process streams
+- Upstream chemical injection programs (demulsifiers, corrosion inhibitors, antifoulants, antifoams) can CAUSE fouling if incompatible, overdosed, or thermally unstable
+- Phosphate ester chemicals from crude production can survive desalting and foul downstream equipment
+- Silicon from antifoam can poison catalysts and deposit as amorphous SiO₂
+- Consider timing: does the fouling correlate with a specific crude cargo, a chemical delivery, a maintenance activity, or a turnaround?
 
-INSTRUCTIONS:
-Given a fouling sample description, think about contamination and unexpected external sources. Provide 2–4 theories:
-1. Give it a clear name
-2. Rate confidence: HIGH / MEDIUM / LOW
-3. Explain the contamination pathway (2–4 sentences)
-4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 analytical tests that would identify contamination sources — prioritise internal methods, fastest/easiest first
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Think creatively — contamination sources are often the ones nobody considered.`
   },
@@ -255,16 +296,16 @@ Your expertise covers:
 - Crude oil sediment and BS&W issues
 - Wax and pour point behaviour of different crude types
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- Light tight oils (LTOs) can DESTABILISE asphaltenes in heavier blend components — the fouling may not come from the LTO itself but from the incompatibility
+- Formation water chemistry varies enormously between fields — high-Ca²⁺/SO₄²⁻ waters cause CaSO₄ scaling; high-Ba²⁺ waters cause BaSO₄
+- Opportunity crudes often bring multiple fouling risks simultaneously (high TAN + high metals + poor stability)
+- Consider whether the crude has been treated with production chemicals (drag reducers, pour point depressants, demulsifiers) that could decompose or cause downstream issues
+- Cracked stocks (coker naphtha, FCC products) carry reactive species (diolefins, styrene, indene) that straight-run stocks do not
 
-INSTRUCTIONS:
-Given a fouling sample description, consider whether feedstock quality or crude chemistry could be the root cause. Provide 2–4 theories:
-1. Give it a clear name
-2. Rate confidence: HIGH / MEDIUM / LOW
-3. Explain how the crude/feedstock chemistry produced this deposit (2–4 sentences)
-4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 analytical tests — prioritise internal methods, fastest/easiest first
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Use appropriate jargon.`
   },
@@ -287,22 +328,33 @@ Your expertise covers:
 - Thermal degradation of additives and treating chemicals
 - Hot wall vs bulk fluid temperature effects on deposit formation rates
 
-${INSTRUMENT_TEXT}
+DOMAIN-SPECIFIC THINKING:
+- Distinguish between THERMAL coke (>700°F, high C/low H, insoluble) and POLYMERISED gums (<700°F, moderate H, often solvent-soluble)
+- Consider whether metal surfaces (tube walls, catalyst, entrained fines) are CATALYSING degradation — V and Ni lower the activation energy for coking
+- Mesophase coke has characteristic shiny/anisotropic appearance — if described, this is nearly diagnostic
+- The "dry point" phenomenon: when a liquid stream completely vaporises, dissolved polymers/gums precipitate out at the point of total vaporisation — a specific and often overlooked mechanism
+- Temperature thresholds: >350°F diolefin polymerisation; >500°F autoxidation; >650°F thermal cracking onset; >750°F rapid coking
+- Residence time matters: the same temperature is harmless at seconds but destructive at hours
 
-INSTRUCTIONS:
-Given a fouling sample description, evaluate whether thermal or catalytic degradation is involved. Provide 2–4 theories:
-1. Give it a clear name
-2. Rate confidence: HIGH / MEDIUM / LOW
-3. Explain the degradation mechanism and temperature regime (2–4 sentences)
-4. List supporting evidence from the sample description
-5. List what doesn't fit or what's uncertain
-6. Recommend 2–4 analytical tests — prioritise internal methods, fastest/easiest first
+${INSTRUMENT_TEXT}
+${SHARED_PREAMBLE}
+${SHARED_INSTRUCTIONS}
 
 Be concise and professional. Use appropriate jargon.`
   },
 ];
 
-const LEAD_SYSTEM = `You are the Lead Investigator for a petroleum refinery fouling investigation. You have received analyses from 6 domain specialists. Your job is to synthesise their findings into a clear, actionable report.
+const CHALLENGE_SYSTEM = `You are a panel of 6 fouling investigation specialists reviewing each other's work. You have just seen all theories from the initial round. Your job is to CHALLENGE, REFINE, and BUILD on each other's theories.
+
+For each specialist, briefly:
+1. **AGREE/DISAGREE** with the other specialists' theories that overlap with your domain
+2. **SYNERGIES** — identify where your theory combined with another specialist's theory creates a stronger explanation (e.g. "The organic gums I identified could be acting as a binder for the inorganic fines the Corrosion Specialist found")
+3. **MISSED ANGLES** — flag anything no specialist considered that the combined evidence now suggests
+4. **REVISED CONFIDENCE** — if seeing other specialists' work changes your confidence on any theory, state the new value and why
+
+Be concise — 2-3 sentences per point. Focus on the cross-domain insights that isolated analysis misses.`;
+
+const LEAD_SYSTEM = `You are the Lead Investigator for a petroleum refinery fouling investigation. You have received analyses from 6 domain specialists AND their cross-review of each other's work. Your job is to synthesise their findings into a clear, actionable report.
 
 You are sharp, curious, and decisive. You cut through noise, identify the strongest theories, challenge weak reasoning, and design an efficient analytical plan. The chemist reading your report has a PhD — be professional, concise, and use appropriate jargon. Do not over-explain basics.
 
@@ -312,28 +364,35 @@ IMPORTANT — CONFIDENCE CALIBRATION:
 Fouling misdiagnosis can cost millions in downtime, wrong chemical treatments, or unnecessary shutdowns. Your confidence ratings carry real financial weight. Be honest and well-calibrated:
 - State confidence as a percentage (0–100%) with a qualifier (HIGH/MEDIUM/LOW)
 - Distinguish between "evidence strongly supports this" vs "this is plausible but speculative"
+- If a single observation is nearly pathognomonic, weight it accordingly — do not spread confidence artificially
 - If specialists disagree, explain why and what would resolve the disagreement
 - Never inflate confidence to appear decisive — an honest 35% is more valuable than a dishonest 70%
 
 INSTRUCTIONS:
-1. **THEORY RANKING** — Review all theories from the 6 specialists. Identify the top 3–5 most plausible theories. For each:
+
+1. **CRITICAL INFORMATION GAPS** — Before ranking theories, list the top 3–5 pieces of information that are missing from the brief and would most impact the diagnosis. For each, state what it would confirm/rule out. Frame these as specific questions the investigating chemist can go check RIGHT NOW (operating logs, DCS trends, maintenance records, water treatment data, crude assay data, chemical injection records, upstream equipment condition). This section helps the chemist provide additional information to refine the analysis.
+
+2. **THEORY RANKING** — Review all theories from the 6 specialists AND their cross-review insights. Identify the top 3–5 most plausible theories. For each:
    - State the theory name and which specialist(s) proposed it
    - Give your confidence assessment as a percentage with qualifier (e.g. "65% — MEDIUM")
    - Explain why you rank it where you do (1–2 sentences) — cite specific evidence
    - Note if multiple specialists converged on the same mechanism (strengthens confidence)
    - Note if specialists disagreed on this mechanism and why
+   - Note any SYNERGISTIC mechanisms identified in the challenge round
 
-2. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right. State what evidence would elevate these.
+3. **DISSENTING VIEWS** — Note any interesting minority theories that shouldn't be dismissed. Sometimes the unexpected explanation is right. State what evidence would elevate these.
 
-3. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
+4. **ANALYTICAL PLAN** — Design a step-by-step analytical workflow:
    - Order tests from fastest/easiest to most complex
    - For each test, state what it would confirm or rule out, and what specific result to look for
    - Group into phases: Phase 1 (quick screening, do immediately), Phase 2 (targeted confirmation), Phase 3 (deep characterisation if needed)
    - STRONGLY prefer internal methods. Only recommend external methods if internal methods genuinely cannot answer a critical question.
 
-4. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
+5. **EXTERNAL LAB ALERT** — If any leading theory requires external analysis to confirm, flag this prominently at the top with a ⚠️ so the chemist can send the sample out immediately while running internal tests in parallel.
 
-5. **WHAT WOULD CHANGE MY MIND** — For the top 2 theories, explicitly state what analytical result would make you abandon each theory. This is critical for efficient investigation.
+6. **WHAT WOULD CHANGE MY MIND** — For the top 2 theories, explicitly state what analytical result would make you abandon each theory. This is critical for efficient investigation.
+
+7. **QUESTIONS FOR THE INVESTIGATING CHEMIST** — Compile the most impactful information requests from all specialists into a prioritised list. Frame as specific, answerable questions. These help the chemist provide additional data that could immediately sharpen the diagnosis.
 
 Keep the total report focused and scannable. Use headers, bullet points, and bold text for key findings.`;
 
@@ -429,10 +488,14 @@ function SampleForm({ onSubmit, disabled }) {
     appearance: "",
     odor: "",
     location: "",
+    spatialPattern: "",
     processStream: "",
     conditions: "",
     duration: "",
+    onsetPattern: "",
     recentChanges: "",
+    upstreamEquipment: "",
+    triedAndFailed: "",
     observations: "",
     prelimResults: "",
   });
@@ -441,6 +504,7 @@ function SampleForm({ onSubmit, disabled }) {
 
   const inputStyle = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, padding: "10px 12px", border: "1px solid #1e2e3e", borderRadius: 6, background: "#0a1420", color: "#d0d8e0", outline: "none", width: "100%", resize: "vertical" };
   const labelStyle = { display: "block", fontSize: 11, fontWeight: 600, color: "#6a8a9a", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.8 };
+  const hintStyle = { display: "block", fontSize: 10, color: "#3a5a6a", marginTop: 3, lineHeight: 1.4 };
 
   const physicalForms = ["", "Solid — powder/granular", "Solid — hard chunks/flakes", "Solid — layered deposit", "Paste / sludge", "Waxy solid", "Liquid — clear", "Liquid — opaque/dark", "Emulsion", "Slurry (solid + liquid)", "Other"];
 
@@ -451,11 +515,15 @@ function SampleForm({ onSubmit, disabled }) {
     if (form.appearance) parts.push(`**Appearance (colour, texture):** ${form.appearance}`);
     if (form.odor) parts.push(`**Odour:** ${form.odor}`);
     if (form.location) parts.push(`**Location Found:** ${form.location}`);
+    if (form.spatialPattern) parts.push(`**Spatial Pattern of Deposit:** ${form.spatialPattern}`);
     if (form.processStream) parts.push(`**Process Stream:** ${form.processStream}`);
     if (form.conditions) parts.push(`**Operating Conditions (T, P, flow if known):** ${form.conditions}`);
     if (form.duration) parts.push(`**Duration / When First Noticed:** ${form.duration}`);
-    if (form.recentChanges) parts.push(`**Recent Changes (crude blend, operations, maintenance):** ${form.recentChanges}`);
-    if (form.observations) parts.push(`**Additional Observations:** ${form.observations}`);
+    if (form.onsetPattern) parts.push(`**Onset Pattern:** ${form.onsetPattern}`);
+    if (form.recentChanges) parts.push(`**Recent Changes (process, feed, chemicals, maintenance):** ${form.recentChanges}`);
+    if (form.upstreamEquipment) parts.push(`**Upstream Equipment Condition:** ${form.upstreamEquipment}`);
+    if (form.triedAndFailed) parts.push(`**What Has Been Tried / Failed:** ${form.triedAndFailed}`);
+    if (form.observations) parts.push(`**Additional Observations (ΔP trends, production impact, cleaning history):** ${form.observations}`);
     if (form.prelimResults) parts.push(`**Preliminary Test Results:** ${form.prelimResults}`);
     onSubmit(parts.join("\n"));
   };
@@ -465,7 +533,7 @@ function SampleForm({ onSubmit, disabled }) {
   return (
     <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid #1e2e3e", padding: "20px 18px" }}>
       <div style={{ fontSize: 15, fontWeight: 700, color: "#e8c56a", marginBottom: 4 }}>Sample Description</div>
-      <div style={{ fontSize: 12, color: "#4a6a7a", marginBottom: 18 }}>Describe everything you know about the sample. More detail = better theories.</div>
+      <div style={{ fontSize: 12, color: "#4a6a7a", marginBottom: 18 }}>Describe everything you know about the fouling sample. The more detail you provide, the better the investigation. Fields marked with * are most diagnostic.</div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -482,24 +550,30 @@ function SampleForm({ onSubmit, disabled }) {
         </div>
 
         <div>
-          <label style={labelStyle}>Appearance (colour, texture, consistency)</label>
-          <textarea value={form.appearance} onChange={e => set("appearance", e.target.value)} style={{ ...inputStyle, minHeight: 60 }} placeholder="e.g. Black, hard, layered deposit with metallic sheen on inner surface. Brittle when scraped." />
+          <label style={labelStyle}>Appearance (colour, texture, consistency) *</label>
+          <textarea value={form.appearance} onChange={e => set("appearance", e.target.value)} style={{ ...inputStyle, minHeight: 60 }} placeholder="e.g. Black, hard, layered deposit with metallic sheen on inner surface. Brittle when scraped. Shiny fragments at tube inlets." />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div>
             <label style={labelStyle}>Odour (if noted)</label>
-            <input value={form.odor} onChange={e => set("odor", e.target.value)} style={inputStyle} placeholder="e.g. Strong H₂S smell, petroleum odour" />
+            <input value={form.odor} onChange={e => set("odor", e.target.value)} style={inputStyle} placeholder="e.g. Strong H₂S smell, petroleum odour, none" />
           </div>
           <div>
-            <label style={labelStyle}>Duration / When first noticed</label>
+            <label style={labelStyle}>Duration / When first noticed *</label>
             <input value={form.duration} onChange={e => set("duration", e.target.value)} style={inputStyle} placeholder="e.g. 3 months, discovered during turnaround" />
           </div>
         </div>
 
         <div>
-          <label style={labelStyle}>Location found (unit, equipment, position)</label>
-          <textarea value={form.location} onChange={e => set("location", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Crude preheat exchanger E-101 tube side, inlet end. CDU preheat train." />
+          <label style={labelStyle}>Location found (unit, equipment, position) *</label>
+          <textarea value={form.location} onChange={e => set("location", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Crude preheat exchanger E-101 tube side, inlet end. CDU preheat train, between desalter and preflash drum." />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Spatial pattern of deposit *</label>
+          <textarea value={form.spatialPattern} onChange={e => set("spatialPattern", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Worst at tube inlets, uniform along tube length, concentrated under baffles, only on hot side, localized pitting under thickest deposits..." />
+          <span style={hintStyle}>Where exactly in the equipment is the deposit? Inlet vs outlet? Top vs bottom? Tube side vs shell side? Uniform or localized? This is one of the most diagnostic clues.</span>
         </div>
 
         <div>
@@ -513,18 +587,36 @@ function SampleForm({ onSubmit, disabled }) {
         </div>
 
         <div>
-          <label style={labelStyle}>Recent changes (crude blend, operations, maintenance, shutdowns)</label>
-          <textarea value={form.recentChanges} onChange={e => set("recentChanges", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Switched to 30% opportunity crude 6 weeks ago, increased furnace outlet temp by 5°C" />
+          <label style={labelStyle}>Onset pattern *</label>
+          <textarea value={form.onsetPattern} onChange={e => set("onsetPattern", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Gradual over 6 months, or sudden onset after a specific event. Did it correlate with a startup/shutdown? A crude switch? A seasonal change?" />
+          <span style={hintStyle}>Sudden = likely a specific trigger event. Gradual = likely a cumulative process mechanism. Correlated with shutdowns = possible thermal cycling effect.</span>
         </div>
 
         <div>
-          <label style={labelStyle}>Additional observations</label>
-          <textarea value={form.observations} onChange={e => set("observations", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="Anything else — pressure drop trends, production impact, similar incidents, visual details..." />
+          <label style={labelStyle}>Recent changes (process, feed, chemicals, routing, maintenance) *</label>
+          <textarea value={form.recentChanges} onChange={e => set("recentChanges", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Started routing coker naphtha directly to the unit 4 months ago. Changed crude blend to include 30% opportunity crude. New antifoulant chemical started." />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Upstream equipment condition</label>
+          <textarea value={form.upstreamEquipment} onChange={e => set("upstreamEquipment", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Desalter running well / poorly, upstream filters bypassed, tank recently cleaned, coker drum switching pattern..." />
+          <span style={hintStyle}>Condition of equipment upstream of the fouled location: desalter performance, filters, tanks, columns, any bypassed equipment.</span>
+        </div>
+
+        <div>
+          <label style={labelStyle}>What has been tried / what failed</label>
+          <textarea value={form.triedAndFailed} onChange={e => set("triedAndFailed", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Chemical cleaning with toluene — partially effective. Antifoulant injection — no improvement. Water wash — made it worse." />
+          <span style={hintStyle}>What remediation has been attempted? What worked, what didn't? This eliminates theories and reveals clues.</span>
+        </div>
+
+        <div>
+          <label style={labelStyle}>Additional observations (ΔP trends, production impact, cleaning history)</label>
+          <textarea value={form.observations} onChange={e => set("observations", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. ΔP rising but heat transfer coefficient stable. Required 16 cleanings in 1987. Similar problem in parallel unit?" />
         </div>
 
         <div>
           <label style={labelStyle}>Preliminary test results (if any)</label>
-          <textarea value={form.prelimResults} onChange={e => set("prelimResults", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Soluble in toluene but not heptane, ash content ~15%, high Fe by XRF screening" />
+          <textarea value={form.prelimResults} onChange={e => set("prelimResults", e.target.value)} style={{ ...inputStyle, minHeight: 50 }} placeholder="e.g. Soluble in toluene but not heptane, ash content ~15%, high Fe by XRF screening, 80% inorganic" />
         </div>
       </div>
 
@@ -647,11 +739,50 @@ function InstrumentPanel() {
 // CLIPBOARD BRIEFING GENERATOR (Pro Plan mode)
 // ═══════════════════════════════════════
 function buildClaudeCodePrompt(sampleText) {
-  return `Run a fouling investigation on this sample using Claude Opus 4.6 for all agents. Use the Fouling Investigator agent swarm: spawn 6 domain specialist agents IN PARALLEL (Organic Fouling Chemist, Inorganic/Corrosion Specialist, Process Engineer, Contamination/External Source Analyst, Crude/Feedstock Chemistry Specialist, Thermal/Catalytic Degradation Specialist), then synthesise their outputs with a Lead Investigator agent.
+  return `Run a fouling investigation on this sample using Claude Opus 4.6 for all agents. This is a 3-phase investigation:
 
-CRITICAL — CONFIDENCE CALIBRATION: Fouling misdiagnosis can cost millions. Each specialist must rate confidence as a percentage (0–100%) with justification — distinguish "strong evidence" from "plausible but speculative". Never inflate confidence. An honest 35% is more valuable than a dishonest 70%.
+**PHASE 1 — PARALLEL SPECIALIST ANALYSIS:**
+Spawn 6 domain specialist agents IN PARALLEL:
+1. Organic Fouling Chemist
+2. Inorganic/Corrosion Specialist
+3. Process Engineer
+4. Contamination/External Source Analyst
+5. Crude/Feedstock Chemistry Specialist
+6. Thermal/Catalytic Degradation Specialist
 
-Each specialist should generate 2–4 theories. For each theory: confidence % with justification, mechanism explanation, supporting evidence, gaps/uncertainties, and recommended analytical tests (stating what result would confirm vs rule out each theory). The Lead Investigator ranks theories, flags external lab needs early, states what would change their mind on top theories, and designs a phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation if needed). Prioritise internal methods first, fastest/easiest first.
+Each specialist MUST:
+- **FIRST** list 3–5 missing pieces of information that would most impact their analysis, with what each would confirm/rule out
+- **THEN** generate 2–4 theories with: confidence % (0–100%) with justification, mechanism explanation (including WHY HERE and WHY NOW), supporting evidence, gaps/uncertainties, recommended analytical tests (what confirms vs rules out)
+- **FINALLY** list specific questions for the investigating chemist — information they could look up right now (operating logs, DCS trends, maintenance records, chemical injection records, crude assay data, water treatment data) that would sharpen the diagnosis
+
+CRITICAL THINKING REQUIREMENTS FOR ALL SPECIALISTS:
+- Don't just identify WHAT is depositing — explain WHY at this location and WHY at this time
+- Consider phase changes (vaporisation, condensation, crystallisation, inverse solubility, dry-point precipitation)
+- Consider transient operations (startups, shutdowns, drum switches, feed changes, upsets)
+- Consider upstream debris transport and filtration failures
+- Consider synergistic mechanisms (your fouling type enabling another specialist's)
+- If a single observation is nearly pathognomonic, weight it accordingly — don't spread confidence artificially
+
+CONFIDENCE CALIBRATION: Fouling misdiagnosis can cost millions. An honest 35% is more valuable than a dishonest 70%.
+
+**PHASE 2 — CHALLENGE ROUND:**
+After all 6 specialists report, run a cross-review where each specialist sees the others' theories and responds with:
+- Agreements/disagreements with overlapping theories
+- Synergistic mechanisms (e.g. "the organic gums I identified could be binding the inorganic fines from the Corrosion Specialist")
+- Missed angles that the combined evidence now suggests
+- Revised confidence levels based on seeing other specialists' work
+
+**PHASE 3 — LEAD INVESTIGATOR SYNTHESIS:**
+A Lead Investigator synthesises all specialist analyses AND the challenge round into a final report:
+1. Critical information gaps — top 5 missing pieces of info as specific questions the chemist can go check right now
+2. Theory ranking — top 3–5 theories with confidence %, noting specialist convergence, disagreements, and synergies from the challenge round
+3. Dissenting views worth preserving
+4. Phased analytical plan (Phase 1: quick screening → Phase 2: targeted confirmation → Phase 3: deep characterisation)
+5. External lab alert if needed
+6. "What would change my mind" for top 2 theories
+7. Prioritised questions for the investigating chemist — things they can check immediately to refine the diagnosis
+
+Prioritise internal methods first, fastest/easiest first.
 
 FOULING SAMPLE INVESTIGATION BRIEF:
 
@@ -745,15 +876,30 @@ function App() {
 
     await Promise.all(promises);
 
+    // Challenge round: specialists review each other's work
     setAgentStatuses(p => ({ ...p, lead: "running" }));
+    let challengeResult = "";
     try {
       const specialistInputs = AGENTS.map(a =>
         `## ${a.name} (${a.icon})\n${results[a.id] || "No response"}`
       ).join("\n\n---\n\n");
 
-      const leadBriefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\n---\n\nSPECIALIST ANALYSES:\n\n${specialistInputs}\n\n---\n\nSynthesise all specialist analyses into a final investigation report. Rank the theories, design the analytical plan, and flag any external lab needs.`;
+      const challengeBriefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\n---\n\nALL SPECIALIST ANALYSES:\n\n${specialistInputs}\n\n---\n\nReview all specialist theories. For each domain, identify agreements, disagreements, synergistic mechanisms, and missed angles. Revise confidence levels where warranted.`;
 
-      const leadResult = await callClaude(apiKey, model, LEAD_SYSTEM, leadBriefing, 4000);
+      challengeResult = await callClaude(apiKey, model, CHALLENGE_SYSTEM, challengeBriefing, 3000);
+    } catch (e) {
+      challengeResult = `Challenge round error: ${e.message}`;
+    }
+
+    // Lead Investigator synthesis
+    try {
+      const specialistInputs = AGENTS.map(a =>
+        `## ${a.name} (${a.icon})\n${results[a.id] || "No response"}`
+      ).join("\n\n---\n\n");
+
+      const leadBriefing = `FOULING SAMPLE INVESTIGATION BRIEF\n\n${text}\n\n---\n\nSPECIALIST ANALYSES:\n\n${specialistInputs}\n\n---\n\nCHALLENGE ROUND (specialists reviewing each other's work):\n\n${challengeResult}\n\n---\n\nSynthesise all specialist analyses AND the challenge round into a final investigation report. Rank theories, design the analytical plan, flag external lab needs, and compile the most impactful questions for the investigating chemist.`;
+
+      const leadResult = await callClaude(apiKey, model, LEAD_SYSTEM, leadBriefing, 5000);
       setSynthesis(leadResult);
       setAgentStatuses(p => ({ ...p, lead: "done" }));
     } catch (e) {
